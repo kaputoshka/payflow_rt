@@ -38,9 +38,8 @@ class MainWindow(QMainWindow):
         stop_button = QPushButton("Стоп")
         controls_layout.addStretch(stretch=100)
         start_button.clicked.connect(lambda: status_label.setText("Симуляция активна"))
-        start_button.clicked.connect(lambda: start_button.setText("Симуляция активна"))
-        start_button.clicked.connect(lambda: pause_button.setText("Симуляция активна"))
-        start_button.clicked.connect(lambda: stop_button.setText("Симуляция активна"))
+        pause_button.clicked.connect(lambda: status_label.setText("Симуляция Приостановлена"))
+        stop_button.clicked.connect(lambda: status_label.setText("Симуляция остановлена"))
 
         controls_layout.addWidget(start_button)
 
