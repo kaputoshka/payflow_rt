@@ -58,9 +58,24 @@ class MainWindow(QMainWindow):
         self.clock_timer.start(1000)
 
         self.update_clock()
+
+        KPI_layout = QHBoxLayout()
+
+        operation_label = QLabel("Операций/с\n0")
+        avg_label = QLabel("Средняя задержка, мс\n0")
+        people_label = QLabel("Очередь\n0")
+        approved_label = QLabel("Одобрено, %\n0")
+
+        KPI_layout.addWidget(operation_label)
+        KPI_layout.addWidget(avg_label)
+        KPI_layout.addWidget(people_label)
+        KPI_layout.addWidget(approved_label)
+
+        main_layout.addLayout(KPI_layout)
     def update_clock(self) -> None:
         current_time = datetime.now().strftime("%H:%M:%S")
         self.clock_label.setText(current_time)
+
 
 
 app = QApplication(sys.argv)
