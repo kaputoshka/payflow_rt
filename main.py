@@ -58,9 +58,9 @@ class MainWindow(QMainWindow):
         self.clock_timer.start(1000)
 
         self.update_clock()
-        def update_clock(self) -> None:
-                current_time = datetime.now().strftime("%H:%M:%S")
-                self.clock_label.setText(current_time)
+    def update_clock(self) -> None:
+            current_time = datetime.now().strftime("%H:%M:%S")
+            self.clock_label.setText(current_time)
 
 
 app = QApplication(sys.argv)
