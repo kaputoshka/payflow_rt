@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         stop_button = QPushButton("Стоп")
         controls_layout.addStretch(stretch=100)
         start_button.clicked.connect(lambda: status_label.setText("Симуляция активна"))
-        pause_button.clicked.connect(lambda: status_label.setText("Симуляция Приостановлена"))
+        pause_button.clicked.connect(lambda: status_label.setText("Симуляция приостановлена"))
         stop_button.clicked.connect(lambda: status_label.setText("Симуляция остановлена"))
 
         controls_layout.addWidget(start_button)
@@ -46,9 +46,8 @@ class MainWindow(QMainWindow):
         controls_layout.addWidget(pause_button)
         controls_layout.addWidget(stop_button)
 
-        main_layout.addLayout(controls_layout)
-
         main_layout.addLayout(header_layout)
+        main_layout.addLayout(controls_layout)
 
         self.setCentralWidget(central_widget)
         self.clock_label = QLabel()
@@ -59,10 +58,9 @@ class MainWindow(QMainWindow):
         self.clock_timer.start(1000)
 
         self.update_clock()
-
-    def update_clock(self) -> None:
-            current_time = datetime.now().strftime("%H:%M:%S")
-            self.clock_label.setText(current_time)
+        def update_clock(self) -> None:
+                current_time = datetime.now().strftime("%H:%M:%S")
+                self.clock_label.setText(current_time)
 
 
 app = QApplication(sys.argv)
