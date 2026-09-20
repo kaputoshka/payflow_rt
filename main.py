@@ -135,9 +135,7 @@ app = QApplication(sys.argv)
 style_path = Path(__file__).with_name("styles.qss")
 app.setStyleSheet(style_path.read_text(encoding="utf-8"))
 
-window = MainWindow()
-window.show()
-sys.exit(app.exec())
+
 window = MainWindow()
 window.show()
 sys.exit(app.exec())
