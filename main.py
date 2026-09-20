@@ -96,7 +96,7 @@ class MainWindow(QMainWindow):
         payments_title_label = QLabel("Последние платежи")
         main_layout.addWidget(payments_title_label)
         self.payments_tabel = QTableWidget(0, 6)
-        self.payments_table.setHorizontalHeaderLabels(
+        self.payments_tabel.setHorizontalHeaderLabels(
             [
                 "ID",
                 "Сумма, ₽",
@@ -106,7 +106,7 @@ class MainWindow(QMainWindow):
                 "Время",
             ]
         )
-        main_layout.addWidget(self.payments_table)
+        main_layout.addWidget(self.payments_tabel)
 
 
     def update_clock(self) -> None:
