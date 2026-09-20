@@ -27,3 +27,4 @@ dist/
 *.sqlite
 *.sqlite3
 *.log
+.run/
