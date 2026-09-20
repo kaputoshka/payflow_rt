@@ -3,10 +3,12 @@ from datetime import datetime
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
     QApplication,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QMainWindow,
     QPushButton,
+    QTableWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -53,25 +55,60 @@ class MainWindow(QMainWindow):
         self.clock_label = QLabel()
         header_layout.addWidget(self.clock_label)
 
+
+
         self.clock_timer = QTimer(self)
         self.clock_timer.timeout.connect(self.update_clock)
         self.clock_timer.start(1000)
-
         self.update_clock()
 
-        KPI_layout = QHBoxLayout()
 
-        operation_label = QLabel("Операций/с\n0")
-        avg_label = QLabel("Средняя задержка, мс\n0")
-        people_label = QLabel("Очередь\n0")
-        approved_label = QLabel("Одобрено, %\n0")
 
-        KPI_layout.addWidget(operation_label)
-        KPI_layout.addWidget(avg_label)
-        KPI_layout.addWidget(people_label)
-        KPI_layout.addWidget(approved_label)
+        kpi_layout = QHBoxLayout()
 
-        main_layout.addLayout(KPI_layout)
+        operations_card = QGroupBox("Операций/с")
+        operations_card_layout = QVBoxLayout(operations_card)
+        self.operations_value_label = QLabel("0")
+        operations_card_layout.addWidget(self.operations_value_label)
+        kpi_layout.addWidget(operations_card)
+
+        latency_card = QGroupBox("Средняя задержка, мс")
+        latency_card_layout = QVBoxLayout(latency_card)
+        self.average_latency_value_label = QLabel("0")
+        latency_card_layout.addWidget(self.average_latency_value_label)
+        kpi_layout.addWidget(latency_card)
+
+        queue_card = QGroupBox("Очередь транзакций")
+        queue_card_layout = QVBoxLayout(queue_card)
+        self.queue_length_value_label = QLabel("0")
+        queue_card_layout.addWidget(self.queue_length_value_label)
+        kpi_layout.addWidget(queue_card)
+
+        approval_card = QGroupBox("Одобрено, %")
+        approval_card_layout = QVBoxLayout(approval_card)
+        self.approval_rate_value_label = QLabel("0")
+        approval_card_layout.addWidget(self.approval_rate_value_label)
+        kpi_layout.addWidget(approval_card)
+
+        main_layout.addLayout(kpi_layout)
+
+
+        payments_title_table = QLabel("Последние платежи")
+        main_layout.addWidget(payments_title_table)
+        self.payments_table = QTableWidget(0, 6)
+        self.payments_table.setHorizontalHeaderLabels(
+            [
+                "ID",
+                "Сумма",
+                "Статус",
+                "Канал",
+                "Задержка, мс",
+                "Время",
+            ]
+        )
+        main_layout.addWidget(self.payments_table)
+
+
     def update_clock(self) -> None:
         current_time = datetime.now().strftime("%H:%M:%S")
         self.clock_label.setText(current_time)
