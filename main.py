@@ -1,6 +1,7 @@
 import sys
 from datetime import datetime
 from PySide6.QtCore import QTimer
+from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication,
     QGroupBox,
@@ -23,13 +24,18 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(900, 600)
 
         title_label = QLabel("Интегрированная платёжная система")
+        title_label.setObjectName("titleLabel")
         central_widget = QWidget()
         main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(24, 24, 24, 24)
+        main_layout.setSpacing(16)
 
         header_layout = QHBoxLayout()
         header_layout.addWidget(title_label)
+        header_layout.addStretch(1)
 
         status_label = QLabel("Симуляция остановлена")
+        status_label.setObjectName("statusLabel")
         header_layout.addWidget(status_label)
         controls_layout = QHBoxLayout()
         operation_label = QLabel("Операционный обзор")
@@ -38,7 +44,12 @@ class MainWindow(QMainWindow):
         start_button = QPushButton("Старт")
         pause_button = QPushButton("Пауза")
         stop_button = QPushButton("Стоп")
+        start_button.setObjectName("startButton")
+        pause_button.setObjectName("pauseButton")
+        stop_button.setObjectName("stopButton")
+
         controls_layout.addStretch(stretch=100)
+
         start_button.clicked.connect(lambda: status_label.setText("Симуляция активна"))
         pause_button.clicked.connect(lambda: status_label.setText("Симуляция приостановлена"))
         stop_button.clicked.connect(lambda: status_label.setText("Симуляция остановлена"))
@@ -96,6 +107,7 @@ class MainWindow(QMainWindow):
         payments_title_label = QLabel("Последние платежи")
         main_layout.addWidget(payments_title_label)
         self.payments_table = QTableWidget(0, 6)
+        self.payments_table.setAlternatingRowColors(True)
         self.payments_table.setHorizontalHeaderLabels(
             [
                 "ID",
@@ -108,6 +120,9 @@ class MainWindow(QMainWindow):
         )
         main_layout.addWidget(self.payments_table)
 
+        header_layout.setSpacing(12)
+        controls_layout.setSpacing(10)
+        kpi_layout.setSpacing(12)
 
     def update_clock(self) -> None:
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -116,6 +131,13 @@ class MainWindow(QMainWindow):
 
 
 app = QApplication(sys.argv)
+
+style_path = Path(__file__).with_name("styles.qss")
+app.setStyleSheet(style_path.read_text(encoding="utf-8"))
+
+window = MainWindow()
+window.show()
+sys.exit(app.exec())
 window = MainWindow()
 window.show()
 sys.exit(app.exec())

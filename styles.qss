@@ -1,0 +1,109 @@
+QMainWindow {
+    background-color: #F4F7FB;
+}
+
+QWidget {
+    color: #1E293B;
+    font-family: Arial;
+    font-size: 14px;
+}
+
+QLabel#titleLabel {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0F172A;
+}
+
+QLabel#statusLabel {
+    background-color: #E2E8F0;
+    border-radius: 8px;
+    padding: 7px 12px;
+    color: #475569;
+    font-weight: 600;
+}
+
+QPushButton {
+    min-height: 36px;
+    border: none;
+    border-radius: 8px;
+    padding: 0 18px;
+    color: white;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    opacity: 0.9;
+}
+
+QPushButton:pressed {
+    padding-top: 2px;
+}
+
+QPushButton#startButton {
+    background-color: #16A34A;
+}
+
+QPushButton#startButton:hover {
+    background-color: #15803D;
+}
+
+QPushButton#pauseButton {
+    background-color: #D97706;
+}
+
+QPushButton#pauseButton:hover {
+    background-color: #B45309;
+}
+
+QPushButton#stopButton {
+    background-color: #DC2626;
+}
+
+QPushButton#stopButton:hover {
+    background-color: #B91C1C;
+}
+
+QGroupBox {
+    background-color: #FFFFFF;
+    border: 1px solid #DDE3ED;
+    border-radius: 10px;
+    margin-top: 12px;
+    padding: 14px 10px 10px 10px;
+    color: #64748B;
+    font-weight: 600;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 4px;
+}
+
+QGroupBox QLabel {
+    color: #0F172A;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+
+
+QTableWidget {
+    background-color: #FFFFFF;
+    alternate-background-color: #F8FAFC;
+    border: 1px solid #DDE3ED;
+    border-radius: 10px;
+    gridline-color: #E2E8F0;
+    selection-background-color: #DBEAFE;
+    selection-color: #1E3A8A;
+}
+
+QHeaderView::section {
+    background-color: #EEF2F7;
+    color: #475569;
+    border: none;
+    border-bottom: 1px solid #DDE3ED;
+    padding: 9px;
+    font-weight: 700;
+}
+
+
