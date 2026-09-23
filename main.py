@@ -2,6 +2,7 @@ import sys
 from datetime import datetime
 from PySide6.QtCore import QTimer
 from pathlib import Path
+
 from PySide6.QtWidgets import (
     QApplication,
     QGroupBox,
@@ -12,7 +13,10 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QVBoxLayout,
     QWidget,
+    QTableWidgetItem,
 )
+
+from models import Payment, PaymentStatus
 
 
 class MainWindow(QMainWindow):
@@ -120,6 +124,33 @@ class MainWindow(QMainWindow):
         )
         main_layout.addWidget(self.payments_table)
 
+        demo_payments = [
+            Payment(
+                payment_id="TX-001",
+                amount_rubles=1500,
+                status=PaymentStatus.APPROVED,
+                channel="Основной",
+                latency_ms=82,
+            ),
+            Payment(
+                payment_id="TX-002",
+                amount_rubles=9400,
+                status=PaymentStatus.DECLINED,
+                channel="Резервный",
+                latency_ms=135,
+            ),
+            Payment(
+                payment_id="TX-003",
+                amount_rubles=3200,
+                status=PaymentStatus.PROCESSING,
+                channel="Основной",
+                latency_ms=47,
+            ),
+        ]
+
+        for payment in demo_payments:
+            self.add_payment_to_table(payment)
+
         header_layout.setSpacing(12)
         controls_layout.setSpacing(10)
         kpi_layout.setSpacing(12)
@@ -127,6 +158,23 @@ class MainWindow(QMainWindow):
     def update_clock(self) -> None:
         current_time = datetime.now().strftime("%H:%M:%S")
         self.clock_label.setText(current_time)
+
+    def add_payment_to_table(self, payment: Payment) -> None:
+        row = self.payments_table.rowCount()
+        self.payments_table.insertRow(row)
+
+        values = [
+            payment.payment_id,
+            f"{payment.amount_rubles:,}".replace(",", " "),
+            payment.status.value,
+            payment.channel,
+            str(payment.latency_ms),
+            payment.created_at.strftime("%H:%M:%S"),
+        ]
+
+        for column, value in enumerate(values):
+            item = QTableWidgetItem(value)
+            self.payments_table.setItem(row, column, item)
 
 
 
