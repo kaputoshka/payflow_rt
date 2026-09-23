@@ -1,5 +1,6 @@
 import random
 import uuid
+from collections import deque
 
 from models import Payment, PaymentStatus
 from transitions import ALLOWED_TRANSITIONS
@@ -8,6 +9,10 @@ from sensors import GatewayLatencySensor, AvailabilitySensor, TrafficSensor
 
 class SimulationEngine:
     def __init__(self) -> None:
+        self.traffic_history: deque[float] = deque(maxlen=120)
+        self.latency_history: deque[float] = deque(maxlen=120)
+        self.queue_history: deque[float] = deque(maxlen=120)
+
         self.payments: list[Payment] = []
         self.is_running: bool = False
         self._counter: int = 0
@@ -48,7 +53,13 @@ class SimulationEngine:
         for payment in self.payments:
             if self._advance(payment):
                 changed.append(payment)
-
+        self.traffic_history.append(self.last_traffic_reading.value)
+        self.latency_history.append(self.last_latency_reading.value)
+        unfinished = sum(
+            1 for p in self.payments
+            if p.status not in (PaymentStatus.APPROVED, PaymentStatus.DECLINED, PaymentStatus.ERROR)
+        )
+        self.queue_history.append(unfinished)
         return changed
 
     def _spawn_payment(self) -> Payment:

@@ -105,5 +105,32 @@ QHeaderView::section {
     padding: 9px;
     font-weight: 700;
 }
+QGroupBox#kpiCard {
+    border-top: 3px solid #A78BFA;
+}
+
+QGroupBox#kpiCardLatency {
+    border-top: 3px solid #34D399;
+}
+
+QGroupBox#kpiCardQueue {
+    border-top: 3px solid #FBBF24;
+}
+
+QGroupBox#kpiCardApproval {
+    border-top: 3px solid #60A5FA;
+}
+
+QLabel#kpiDeltaUp {
+    color: #16A34A;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+QLabel#kpiDeltaDown {
+    color: #DC2626;
+    font-size: 12px;
+    font-weight: 700;
+}
 
 

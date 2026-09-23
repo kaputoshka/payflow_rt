@@ -1,7 +1,15 @@
 import sys
 from datetime import datetime
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer,Qt
 from pathlib import Path
+from PySide6.QtGui import QPainter
+
+from PySide6.QtCharts import (
+    QChart,
+    QChartView,
+    QLineSeries,
+    QValueAxis
+)
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -82,57 +90,85 @@ class MainWindow(QMainWindow):
         self.simulation_timer.timeout.connect(self.run_simulation_tick)
         self.simulation_timer.start(800)
 
-        kpi_layout = QHBoxLayout()
+        def _build_kpi_card(self, object_name: str, title: str) -> tuple[QGroupBox, QLabel, QLabel]:
+            card = QGroupBox(title)
+            card.setObjectName(object_name)
+            card_layout = QVBoxLayout(card)
 
-        operations_card = QGroupBox("Операций/с")
-        operations_card_layout = QVBoxLayout(operations_card)
-        self.operations_value_label = QLabel("0")
-        operations_card_layout.addWidget(self.operations_value_label)
-        kpi_layout.addWidget(operations_card)
+            header_row = QHBoxLayout()
+            value_label = QLabel("0")
+            delta_label = QLabel("")
+            delta_label.setObjectName("kpiDeltaUp")
+            header_row.addWidget(value_label)
+            header_row.addStretch(1)
+            header_row.addWidget(delta_label)
 
-        latency_card = QGroupBox("Средняя задержка, мс")
-        latency_card_layout = QVBoxLayout(latency_card)
-        self.average_latency_value_label = QLabel("0")
-        latency_card_layout.addWidget(self.average_latency_value_label)
-        kpi_layout.addWidget(latency_card)
-
-        queue_card = QGroupBox("Очередь транзакций")
-        queue_card_layout = QVBoxLayout(queue_card)
-        self.queue_length_value_label = QLabel("0")
-        queue_card_layout.addWidget(self.queue_length_value_label)
-        kpi_layout.addWidget(queue_card)
-
-        approval_card = QGroupBox("Одобрено, %")
-        approval_card_layout = QVBoxLayout(approval_card)
-        self.approval_rate_value_label = QLabel("0")
-        approval_card_layout.addWidget(self.approval_rate_value_label)
-        kpi_layout.addWidget(approval_card)
+            card_layout.addLayout(header_row)
+            return card, value_label, delta_label
 
         main_layout.addLayout(kpi_layout)
 
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(16)
 
-        payments_title_label = QLabel("Последние платежи")
-        main_layout.addWidget(payments_title_label)
+        left_column = QVBoxLayout()
+        left_column.setSpacing(12)
+
+        payments_title_label = QLabel("Последние операции")
+        left_column.addWidget(payments_title_label)
+
         self.payments_table = QTableWidget(0, 6)
-        self.engine = SimulationEngine()
         self.payments_table.setAlternatingRowColors(True)
         self.payments_table.setHorizontalHeaderLabels(
-            [
-                "ID",
-                "Сумма, ₽",
-                "Статус",
-                "Канал",
-                "Задержка, мс",
-                "Время",
-            ]
+            ["ID",
+             "Сумма, ₽",
+             "Статус",
+             "Канал",
+             "Задержка, мс",
+             "Время"]
         )
-        main_layout.addWidget(self.payments_table)
+        left_column.addWidget(self.payments_table)
+
+        # сюда же, если занятие №8 уже сделано, переносим charts_layout:
+        # left_column.addLayout(charts_layout)
+
+        right_column = QVBoxLayout()
+        right_column.setSpacing(12)
+
+        self.controls_placeholder = QGroupBox("Панель управления")
+        right_column.addWidget(self.controls_placeholder)
+
+        self.events_placeholder = QGroupBox("События")
+        right_column.addWidget(self.events_placeholder)
+
+        content_layout.addLayout(left_column, stretch=2)
+        content_layout.addLayout(right_column, stretch=1)
+
+        main_layout.addLayout(content_layout)
 
 
 
         header_layout.setSpacing(12)
         controls_layout.setSpacing(10)
         kpi_layout.setSpacing(12)
+
+        charts_layout = QHBoxLayout()
+
+        self.traffic_chart_view, self.traffic_series = self._build_chart(
+            "Входящий поток", "оп/с"
+        )
+        self.latency_chart_view, self.latency_series = self._build_chart(
+            "Задержка шлюза", "мс"
+        )
+        self.queue_chart_view, self.queue_series = self._build_chart(
+            "Длина очереди", "платежей"
+        )
+
+        charts_layout.addWidget(self.traffic_chart_view)
+        charts_layout.addWidget(self.latency_chart_view)
+        charts_layout.addWidget(self.queue_chart_view)
+
+        main_layout.addLayout(charts_layout)
 
     def update_clock(self) -> None:
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -156,6 +192,7 @@ class MainWindow(QMainWindow):
         for payment in changed_payments:
             self.upsert_payment_row(payment)
         self.update_kpi_cards()
+        self.update_charts()
 
     def upsert_payment_row(self, payment: Payment) -> None:
         row = self._find_row_by_id(payment.payment_id)
@@ -207,8 +244,44 @@ class MainWindow(QMainWindow):
         else:
             self.approval_rate_value_label.setText("0")
 
+    def _build_chart(self, title: str, y_title: str) -> tuple[QChartView, QLineSeries]:
+        series = QLineSeries()
 
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle(title)
+        chart.legend().hide()
 
+        axis_x = QValueAxis()
+        axis_x.setTitleText("Такт, шт.")
+        axis_x.setLabelFormat("%d")
+        chart.addAxis(axis_x, Qt.AlignBottom)
+        series.attachAxis(axis_x)
+
+        axis_y = QValueAxis()
+        axis_y.setTitleText(y_title)
+        chart.addAxis(axis_y, Qt.AlignLeft)
+        series.attachAxis(axis_y)
+
+        view = QChartView(chart)
+        view.setRenderHint(QPainter.Antialiasing)
+        return view, series
+
+    def update_charts(self) -> None:
+        self._fill_series(self.traffic_series, self.engine.traffic_history)
+        self._fill_series(self.latency_series, self.engine.latency_history)
+        self._fill_series(self.queue_series, self.engine.queue_history)
+
+    @staticmethod
+    def _fill_series(series: QLineSeries, history) -> None:
+        series.clear()
+        for index, value in enumerate(history):
+            series.append(index, value)
+
+        chart = series.chart()
+        if history:
+            chart.axes(Qt.Horizontal)[0].setRange(0, max(len(history) - 1, 1))
+            chart.axes(Qt.Vertical)[0].setRange(0, max(history) * 1.2 or 1)
 app = QApplication(sys.argv)
 style_path = Path(__file__).with_name("styles.qss")
 app.setStyleSheet(style_path.read_text(encoding="utf-8"))
