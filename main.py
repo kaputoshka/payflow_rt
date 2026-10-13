@@ -22,10 +22,15 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QTableWidgetItem,
+    QComboBox,
+    QSlider,
+    QLineEdit,
+    QListWidget,
 )
 
 from models import Payment, PaymentStatus
 from engine import SimulationEngine
+from commands import CommandType
 
 
 
@@ -35,6 +40,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("PayFlow RT Simulator")
         self.setMinimumSize(900, 600)
+        self.engine = SimulationEngine()
 
         title_label = QLabel("Интегрированная платёжная система")
         title_label.setObjectName("titleLabel")
@@ -168,6 +174,45 @@ class MainWindow(QMainWindow):
         charts_layout.addWidget(self.queue_chart_view)
 
         main_layout.addLayout(charts_layout)
+        controls_panel = QGroupBox("Панель управления")
+        controls_panel_layout = QVBoxLayout(controls_panel)
+
+        gateway_row = QHBoxLayout()
+        gateway_row.addWidget(QLabel("Активный шлюз"))
+        self.gateway_selector = QComboBox()
+        self.gateway_selector.addItems(["Основной", "Резервный"])
+        gateway_row.addWidget(self.gateway_selector)
+        controls_panel_layout.addLayout(gateway_row)
+
+        intensity_row = QHBoxLayout()
+        intensity_row.addWidget(QLabel("Интенсивность"))
+        self.intensity_slider = QSlider(Qt.Horizontal)
+        self.intensity_slider.setRange(2, 30)
+        self.intensity_slider.setValue(10)
+        intensity_row.addWidget(self.intensity_slider)
+        controls_panel_layout.addLayout(intensity_row)
+
+        retry_button = QPushButton("Повторить обработку")
+        controls_panel_layout.addWidget(retry_button)
+
+        terminal_row = QHBoxLayout()
+        self.terminal_input = QLineEdit()
+        self.terminal_input.setPlaceholderText("ID терминала")
+        block_button = QPushButton("Заблокировать терминал")
+        terminal_row.addWidget(self.terminal_input)
+        terminal_row.addWidget(block_button)
+        controls_panel_layout.addLayout(terminal_row)
+
+        self.events_list = QListWidget()
+        controls_panel_layout.addWidget(QLabel("События"))
+        controls_panel_layout.addWidget(self.events_list)
+
+        main_layout.addWidget(controls_panel)
+
+        self.gateway_selector.currentTextChanged.connect(self.handle_switch_gateway)
+        self.intensity_slider.valueChanged.connect(self.handle_set_intensity)
+        retry_button.clicked.connect(self.handle_retry_processing)
+        block_button.clicked.connect(self.handle_block_terminal)
 
     def update_clock(self) -> None:
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -297,6 +342,32 @@ class MainWindow(QMainWindow):
         if history:
             chart.axes(Qt.Horizontal)[0].setRange(0, max(len(history) - 1, 1))
             chart.axes(Qt.Vertical)[0].setRange(0, max(history) * 1.2 or 1)
+
+
+
+    def handle_switch_gateway(self, target: str) -> None:
+        event = self.engine.switch_gateway(target)
+        self._log_event(event)
+
+    def handle_set_intensity(self, raw_value: int) -> None:
+        event = self.engine.set_intensity(raw_value / 10)
+        self._log_event(event)
+
+    def handle_retry_processing(self) -> None:
+        event = self.engine.retry_processing()
+        self._log_event(event)
+        self.update_kpi_cards()
+
+    def handle_block_terminal(self) -> None:
+        event = self.engine.block_terminal(self.terminal_input.text().strip())
+        self._log_event(event)
+        self.terminal_input.clear()
+
+    def _log_event(self, event) -> None:
+        self.events_list.insertItem(0, event.as_log_line())
+        if self.events_list.count() > 50:
+            self.events_list.takeItem(self.events_list.count() - 1)
+
 app = QApplication(sys.argv)
 style_path = Path(__file__).with_name("styles.qss")
 app.setStyleSheet(style_path.read_text(encoding="utf-8"))

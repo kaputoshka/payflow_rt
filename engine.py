@@ -12,6 +12,11 @@ class SimulationEngine:
         self.traffic_history: deque[float] = deque(maxlen=120)
         self.latency_history: deque[float] = deque(maxlen=120)
         self.queue_history: deque[float] = deque(maxlen=120)
+        self.active_gateway: str = "Основной"
+
+        self.intensity: float = 1.0  # множитель скорости обработки
+        self.blocked_terminals: set[str] = set()
+        self.events: list[CommandEvent] = []
 
         self.payments: list[Payment] = []
         self.is_running: bool = False
@@ -88,3 +93,51 @@ class SimulationEngine:
 
         payment.latency_ms += int(self.last_latency_reading.value / 3)
         return True
+
+    def switch_gateway(self, target: str) -> CommandEvent:
+        success = target in ("Основной", "Резервный") and target != self.active_gateway
+        if success:
+            self.active_gateway = target
+        event = CommandEvent(
+            CommandType.SWITCH_GATEWAY,
+            f"активен {self.active_gateway}",
+            success,
+        )
+        self.events.append(event)
+        return event
+
+    def set_intensity(self, value: float) -> CommandEvent:
+        success = 0.2 <= value <= 3.0
+        if success:
+            self.intensity = value
+        event = CommandEvent(
+            CommandType.SET_INTENSITY,
+            f"x{self.intensity:.1f}",
+            success,
+        )
+        self.events.append(event)
+        return event
+
+    def retry_processing(self) -> CommandEvent:
+        retried = [p for p in self.payments if p.status == PaymentStatus.ERROR]
+        for payment in retried:
+            payment.status = PaymentStatus.ROUTING
+        event = CommandEvent(
+            CommandType.RETRY_PROCESSING,
+            f"возвращено в обработку: {len(retried)}",
+            bool(retried),
+        )
+        self.events.append(event)
+        return event
+
+    def block_terminal(self, terminal_id: str) -> CommandEvent:
+        success = bool(terminal_id) and terminal_id not in self.blocked_terminals
+        if success:
+            self.blocked_terminals.add(terminal_id)
+        event = CommandEvent(
+            CommandType.BLOCK_TERMINAL,
+            terminal_id or "—",
+            success,
+        )
+        self.events.append(event)
+        return event
