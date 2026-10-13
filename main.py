@@ -90,22 +90,21 @@ class MainWindow(QMainWindow):
         self.simulation_timer.timeout.connect(self.run_simulation_tick)
         self.simulation_timer.start(800)
 
-        def _build_kpi_card(self, object_name: str, title: str) -> tuple[QGroupBox, QLabel, QLabel]:
-            card = QGroupBox(title)
-            card.setObjectName(object_name)
-            card_layout = QVBoxLayout(card)
+        kpi_layout = QHBoxLayout()
 
-            header_row = QHBoxLayout()
-            value_label = QLabel("0")
-            delta_label = QLabel("")
-            delta_label.setObjectName("kpiDeltaUp")
-            header_row.addWidget(value_label)
-            header_row.addStretch(1)
-            header_row.addWidget(delta_label)
+        operations_card, self.operations_value_label, self.operations_delta_label = \
+            self._build_kpi_card("kpiCard", "Операций / с")
+        latency_card, self.average_latency_value_label, self.latency_delta_label = \
+            self._build_kpi_card("kpiCardLatency", "Средняя задержка, мс")
+        queue_card, self.queue_length_value_label, self.queue_delta_label = \
+            self._build_kpi_card("kpiCardQueue", "Очередь сообщений")
+        approval_card, self.approval_rate_value_label, self.approval_delta_label = \
+            self._build_kpi_card("kpiCardApproval", "Доля одобрений")
 
-            card_layout.addLayout(header_row)
-            return card, value_label, delta_label
+        for card in (operations_card, latency_card, queue_card, approval_card):
+            kpi_layout.addWidget(card)
 
+        kpi_layout.setSpacing(12)
         main_layout.addLayout(kpi_layout)
 
         content_layout = QHBoxLayout()
@@ -271,6 +270,22 @@ class MainWindow(QMainWindow):
         self._fill_series(self.traffic_series, self.engine.traffic_history)
         self._fill_series(self.latency_series, self.engine.latency_history)
         self._fill_series(self.queue_series, self.engine.queue_history)
+
+    def _build_kpi_card(self, object_name: str, title: str) -> tuple[QGroupBox, QLabel, QLabel]:
+        card = QGroupBox(title)
+        card.setObjectName(object_name)
+        card_layout = QVBoxLayout(card)
+
+        header_row = QHBoxLayout()
+        value_label = QLabel("0")
+        delta_label = QLabel("")
+        delta_label.setObjectName("kpiDeltaUp")
+        header_row.addWidget(value_label)
+        header_row.addStretch(1)
+        header_row.addWidget(delta_label)
+
+        card_layout.addLayout(header_row)
+        return card, value_label, delta_label
 
     @staticmethod
     def _fill_series(series: QLineSeries, history) -> None:
