@@ -2,6 +2,7 @@ import random
 import uuid
 from collections import deque
 
+from commands import CommandEvent, CommandType
 from models import Payment, PaymentStatus
 from transitions import ALLOWED_TRANSITIONS
 from sensors import GatewayLatencySensor, AvailabilitySensor, TrafficSensor
@@ -13,6 +14,9 @@ class SimulationEngine:
         self.latency_history: deque[float] = deque(maxlen=120)
         self.queue_history: deque[float] = deque(maxlen=120)
         self.active_gateway: str = "Основной"
+
+        self.auto_mode: bool = False
+        self._auto_cooldown: int = 0
 
         self.intensity: float = 1.0  # множитель скорости обработки
         self.blocked_terminals: set[str] = set()
@@ -56,7 +60,7 @@ class SimulationEngine:
             changed.append(self._spawn_payment())
 
         for payment in self.payments:
-            if self._advance(payment):
+            if random.random() < 0.7 * self.intensity and self._advance(payment):
                 changed.append(payment)
         self.traffic_history.append(self.last_traffic_reading.value)
         self.latency_history.append(self.last_latency_reading.value)
@@ -65,6 +69,7 @@ class SimulationEngine:
             if p.status not in (PaymentStatus.APPROVED, PaymentStatus.DECLINED, PaymentStatus.ERROR)
         )
         self.queue_history.append(unfinished)
+        self.apply_auto_rules()
         return changed
 
     def _spawn_payment(self) -> Payment:
@@ -76,6 +81,8 @@ class SimulationEngine:
         )
         self.payments.append(payment)
         return payment
+        self.apply_auto_rules()
+        return changed
 
     def _advance(self, payment: Payment) -> bool:
         possible = ALLOWED_TRANSITIONS[payment.status]
@@ -141,3 +148,27 @@ class SimulationEngine:
         )
         self.events.append(event)
         return event
+
+    def apply_auto_rules(self) -> None:
+        if not self.auto_mode:
+            return
+
+        if self._auto_cooldown > 0:
+            self._auto_cooldown -= 1
+            return
+
+        if (
+                self.last_availability_reading is not None
+                and self.last_availability_reading.value < 90
+                and self.active_gateway != "Резервный"
+        ):
+            event = self.switch_gateway("Резервный")
+            event.details = f"авто: {event.details}"
+            self._auto_cooldown = 5
+
+        queue_length = self.queue_history[-1] if self.queue_history else 0
+        if queue_length > 15 and self.intensity < 2.5:
+            event = self.set_intensity(min(self.intensity + 0.3, 3.0))
+            event.details = f"авто: {event.details}"
+            self._auto_cooldown = 3
+

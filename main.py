@@ -12,6 +12,7 @@ from PySide6.QtCharts import (
 )
 
 from PySide6.QtWidgets import (
+    QCheckBox,
     QApplication,
     QGroupBox,
     QHBoxLayout,
@@ -142,6 +143,9 @@ class MainWindow(QMainWindow):
 
         self.controls_placeholder = QGroupBox("Панель управления")
         right_column.addWidget(self.controls_placeholder)
+        self.auto_mode_checkbox = QCheckBox("Автоматический режим")
+        controls_panel_layout.addWidget(self.auto_mode_checkbox)
+        self.auto_mode_checkbox.toggled.connect(self.handle_toggle_auto_mode)
 
         self.events_placeholder = QGroupBox("События")
         right_column.addWidget(self.events_placeholder)
@@ -214,6 +218,16 @@ class MainWindow(QMainWindow):
         retry_button.clicked.connect(self.handle_retry_processing)
         block_button.clicked.connect(self.handle_block_terminal)
 
+    def handle_toggle_auto_mode(self, enabled: bool) -> None:
+        self.engine.auto_mode = enabled
+        self.gateway_selector.setEnabled(not enabled)
+        self.intensity_slider.setEnabled(not enabled)
+        self._log_event_text(
+            f"Автоматический режим {'включён' if enabled else 'выключен'}"
+        )
+
+    def _log_event_text(self, text: str) -> None:
+        self.events_list.insertItem(0, text)
     def update_clock(self) -> None:
         current_time = datetime.now().strftime("%H:%M:%S")
         self.clock_label.setText(current_time)
@@ -232,9 +246,15 @@ class MainWindow(QMainWindow):
         self.payments_table.setRowCount(0)
 
     def run_simulation_tick(self) -> None:
+        events_before = len(self.engine.events)
+
         changed_payments = self.engine.tick()
         for payment in changed_payments:
             self.upsert_payment_row(payment)
+
+        for event in self.engine.events[events_before:]:
+            self._log_event(event)
+
         self.update_kpi_cards()
         self.update_charts()
 
